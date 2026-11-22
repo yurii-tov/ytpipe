@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Test double for yt-dlp. Understands -o DEST (and `-o -`), writes canned bytes,
+# records its argv to $FAKE_LOG, fails on demand with $FAKE_EXIT.
+set -u
+
+[[ -n "${FAKE_LOG:-}" ]] && printf 'yt-dlp %s\n' "$*" >> "$FAKE_LOG"
+
+dest=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -o|--output) dest="${2:-}"; shift 2 || shift ;;
+    --merge-output-format|-f|--format|--cookies-from-browser|--tempdir) shift 2 || shift ;;
+    *) shift ;;
+  esac
+done
+
+if [[ -n "${FAKE_EXIT:-}" ]]; then
+  echo "ERROR: fake yt-dlp failure" >&2
+  exit "$FAKE_EXIT"
+fi
+
+if [[ -z "$dest" ]]; then
+  echo "fake yt-dlp: no output given" >&2
+  exit 9
+fi
+
+if [[ "$dest" == "-" ]]; then
+  exec cat "$FAKE_MEDIA"   # exec: the double must die how cat dies (SIGPIPE and all)
+fi
+
+cp "$FAKE_MEDIA" "$dest"

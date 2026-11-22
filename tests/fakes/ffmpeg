@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Test double for ffmpeg: pretends to remux by rewriting the last argument as a
+# moov-first file that wraps the input. Records argv to $FAKE_LOG.
+set -u
+
+[[ -n "${FAKE_LOG:-}" ]] && printf 'ffmpeg %s\n' "$*" >> "$FAKE_LOG"
+
+src=""
+out=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -i) src="${2:-}"; shift 2 || shift ;;
+    -*) shift ;;
+    *) out="$1"; shift ;;
+  esac
+done
+
+if [[ -n "${FAKE_FFMPEG_EXIT:-}" ]]; then
+  echo "fake ffmpeg: refusing" >&2
+  exit "$FAKE_FFMPEG_EXIT"
+fi
+
+python3 - "$src" "$out" <<'PY'
+import sys
+
+def box(btype, payload=b""):
+    return (8 + len(payload)).to_bytes(4, "big") + btype + payload
+
+body = open(sys.argv[1], "rb").read()
+with open(sys.argv[2], "wb") as fh:
+    fh.write(box(b"ftyp", b"isomiso2") + box(b"moov", b"REMUXED") + box(b"mdat", body))
+PY

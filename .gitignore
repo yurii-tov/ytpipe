@@ -1,0 +1,27 @@
+# byte code / caches
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.eggs/
+
+# local envs
+.venv/
+venv/
+
+# test and run artifacts
+*.mp4
+*.mkv
+*.webm
+*.m4a
+*.part
+*.ytdl
+.coverage
+.pytest_cache/
+
+# editors / OS
+.DS_Store
+*.swp
+.idea/
+.vscode/
